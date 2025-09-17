@@ -1,0 +1,37 @@
+version: "3"
+
+vars:
+  include: ./include
+  build: ./build
+  test: ./test
+
+tasks:
+  init:
+    cmds:
+      - rm -rf {{ .include }}
+      - git clone --branch master --depth 1 --no-progress https://github.com/atcoder/ac-library.git {{ .include }}
+      - cp templates/header.cpp main.cpp
+      - cmd: cmake -B {{ .build }} -S . -DCMAKE_BUILD_TYPE=Debug -G 'MinGW Makefiles' -DCMAKE_CXX_STANDARD=20 -DCMAKE_CXX_STANDARD_REQUIRED=ON
+        platforms:
+          - windows
+      - cmd: cmake -B {{ .build }} -S . -DCMAKE_BUILD_TYPE=Debug -G 'Unix Makefiles' -DCMAKE_CXX_STANDARD=20 -DCMAKE_CXX_STANDARD_REQUIRED=ON
+        platforms:
+          - linux
+
+  build:
+    cmds:
+      - cmake --build {{ .build }}
+
+  default:
+    aliases:
+      - run
+    deps:
+      - task: build
+    vars:
+      inputs:
+        sh: echo {{ .test }}/*
+    cmds:
+      - for:
+          var: inputs
+          as: input
+        cmd: cat {{ .input | replace "\\" "/" }} | ./build/main{{ exeExt }}
