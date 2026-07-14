@@ -7,10 +7,16 @@ vars:
 
 tasks:
   init:
+    vars:
+      template: 'templates/{{ .CLI_ARGS | default "header" }}.cpp'
+    preconditions:
+      - sh: "[ -f {{ .template }} ]"
+        msg: "{{ .template }} が存在しません。"
     cmds:
       - rm -rf {{ .include }}
       - git clone --branch master --depth 1 --no-progress https://github.com/atcoder/ac-library.git {{ .include }}
-      - cp templates/header.cpp main.cpp
+      - mkdir -p {{ .test }}
+      - cp {{ .template }} main.cpp
       - cmd: cmake -B {{ .build }} -S . -DCMAKE_BUILD_TYPE=Debug -G 'MinGW Makefiles' -DCMAKE_CXX_STANDARD=20 -DCMAKE_CXX_STANDARD_REQUIRED=ON
         platforms:
           - windows
@@ -29,9 +35,9 @@ tasks:
       - task: build
     vars:
       inputs:
-        sh: echo {{ .test }}/*
+        sh: ls {{ .test }}/
     cmds:
       - for:
           var: inputs
           as: input
-        cmd: cat {{ .input | replace "\\" "/" }} | ./build/main{{ exeExt }}
+        cmd: cat {{ .test }}/{{ .input | replace "\\" "/" }} | ./build/main{{ exeExt }}
